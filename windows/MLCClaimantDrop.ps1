@@ -53,31 +53,21 @@ try {
 
     $range = $sheet.Range("A1:R$lastRow")
     $data = $range.Value2
-    $columns = @(11, 12, 13, 14, 17, 18)
-    $fallbackHeaders = @(
-        'MEMBER MLC P#',
-        'MEMBER NAME',
-        'PUBLISHER MLC P#',
-        'PUBLISHER NAME',
-        'ADMINISTRATOR MLC P#',
-        'ADMINISTRATOR NAME'
-    )
-
-    $headers = @()
-    for ($columnIndex = 0; $columnIndex -lt $columns.Count; $columnIndex++) {
-        $header = [string]$data[1, $columns[$columnIndex]]
-        if ([string]::IsNullOrWhiteSpace($header)) { $header = $fallbackHeaders[$columnIndex] }
-        $headers += $header
-    }
+    $columns = @(18, 17, 14, 13)
+    $headers = @('Admin', 'Admin P#', 'Publisher', 'Publisher P#')
 
     $seen = New-Object 'System.Collections.Generic.HashSet[string]'
     $uniqueRows = New-Object 'System.Collections.Generic.List[object]'
     $matchedRows = 0
+    $hasNo = $false
+    $unknownRows = New-Object 'System.Collections.Generic.List[int]'
 
     for ($rowNumber = 2; $rowNumber -le $lastRow; $rowNumber++) {
         $answer = ([string]$data[$rowNumber, 5]).Trim().ToUpperInvariant()
         $answer = $answer.Replace('(', '').Replace(')', '').Trim()
-        if ($answer -ne 'YES' -and $answer -ne 'Y') { continue }
+        if ([string]::IsNullOrWhiteSpace($answer)) { continue }
+        if ($answer -eq 'NO' -or $answer -eq 'N') { $hasNo = $true; continue }
+        if ($answer -ne 'YES' -and $answer -ne 'Y') { [void]$unknownRows.Add($rowNumber); continue }
 
         $matchedRows++
         $claimant = @()
@@ -85,7 +75,7 @@ try {
             $claimant += [string]$data[$rowNumber, $column]
         }
 
-        $keyText = $claimant -join [char]31
+        $keyText = ConvertTo-Json -InputObject $claimant -Compress
         $key = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($keyText))
         if ($seen.Add($key)) {
             [void]$uniqueRows.Add($claimant)
@@ -102,7 +92,6 @@ try {
         [void]$lines.Add(($claimant -join "`t"))
     }
     $clipboardText = $lines -join "`r`n"
-    Set-Clipboard -Value $clipboardText
 
     $csvLines = New-Object 'System.Collections.Generic.List[string]'
     [void]$csvLines.Add((($headers | ForEach-Object { Csv-Escape $_ }) -join ','))
@@ -114,8 +103,12 @@ try {
     $outputPath = Join-Path ([System.IO.Path]::GetDirectoryName($inputPath)) $outputName
     [System.IO.File]::WriteAllLines($outputPath, $csvLines, (New-Object System.Text.UTF8Encoding($true)))
 
+    Set-Clipboard -Value $clipboardText
+    $classification = if ($hasNo) { 'True Partial' } elseif ($unknownRows.Count -eq 0) { 'True Full' } else { 'Needs review' }
+    $warning = if ($unknownRows.Count -gt 0) { "`r`nUnrecognized transfer answers in rows: $($unknownRows -join ', ')." } else { '' }
+
     $plural = if ($uniqueRows.Count -eq 1) { 'row' } else { 'rows' }
-    Show-Message ("Found $matchedRows matching rows and $($uniqueRows.Count) unique claimant $plural.`r`n`r`nThe table is copied—press Ctrl+V to paste it.`r`n`r`nAlso saved:`r`n$outputPath") 'MLC Claimant Drop' ([System.Windows.Forms.MessageBoxIcon]::Information)
+    Show-Message ("$classification.$warning`r`n`r`nFound $matchedRows matching rows and $($uniqueRows.Count) unique claimant $plural.`r`n`r`nThe table is copied—press Ctrl+V to paste it.`r`n`r`nAlso saved:`r`n$outputPath") 'MLC Claimant Drop' ([System.Windows.Forms.MessageBoxIcon]::Information)
 }
 catch {
     Show-Message ("The report could not be processed:`r`n`r`n$($_.Exception.Message)") 'MLC Claimant Drop' ([System.Windows.Forms.MessageBoxIcon]::Error)
