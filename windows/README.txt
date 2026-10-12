@@ -3,10 +3,13 @@ MLC CLAIMANT DROP — WINDOWS
 INSTALL ONCE
 1. Extract this ZIP file.
 2. Double-click "Install MLC Claimant Drop.cmd".
-3. A shortcut named "MLC Claimant Drop" will appear on your desktop.
+3. The installer copies the tool into your user app folder and automatically adds "MLC Claimant Drop" to Send To and your desktop.
+4. You can delete the extracted download after installation. Run the installer again to update the installed tool.
 
 USE IT
-1. Drag one MLC .xlsx report onto the desktop shortcut.
+1. Right-click one MLC .xlsx report, choose Send to, then MLC Claimant Drop.
+   If needed, choose Show more options first to find Send to.
+   Alternatively, drag the report onto the desktop shortcut.
 2. Wait for the confirmation box: True Full or True Partial (or Needs review for unrecognized answers).
 3. The deduplicated table is already copied. Press Ctrl+V wherever you want it.
 4. A CSV copy is also saved beside the original report.
