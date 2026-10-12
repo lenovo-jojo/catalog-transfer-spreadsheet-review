@@ -4,16 +4,29 @@ A desktop workflow tool for extracting unique claimant records from catalog-tran
 
 ## The problem
 
-A transfer report can repeat the same claimant across many catalog rows. The task is to extract claimant details only where the report marks the transfer answer Yes, then remove duplicate six-field records.
+A transfer report can repeat the same claimant across many catalog rows. The task is to extract claimant details only where the report marks the transfer answer Yes, then remove duplicate administrator/publisher records.
 
 ## What it does
 
 - Reads the first worksheet of an `.xlsx` report.
 - Accepts `YES`, `Yes`, `Y`, and `(Y)` in column E, ignoring surrounding whitespace and case.
-- Extracts columns K–N and Q–R: member, publisher, and administrator IDs/names.
+- Checks all work answers in column E: all Yes means **True Full**, any No means **True Partial**, and blanks are ignored. One workbook represents one application. Unrecognized nonblank answers are flagged for review; they cannot establish a full transfer.
+- Extracts columns R, Q, N, M in this order: **Admin, Admin P#, Publisher, Publisher P#**. Member fields are excluded from both clipboard and CSV output.
 - Preserves the first occurrence of each distinct six-field record.
 - Writes a CSV alongside the report and copies a tab-separated table to the clipboard.
 - Reports unsupported files and reports with no matching rows.
+
+## Operational context and personal outcome
+
+I am one of three people on a team processing publishing catalog transfers globally. HubSpot automations and strict triage helped the team clear a backlog spanning several years; this tool helped us sustain that progress by simplifying repeated claimant extraction.
+
+In personal workflow testing, I estimated that my daily processing capacity increased from roughly **5 to 20 transfers when needed**. This is a self-reported estimate of my capacity, not a controlled benchmark or a measured team-wide result. The tool was one part of a broader workflow improvement.
+
+## User workflow and design decisions
+
+The existing Windows Send To workflow launches the tool with one report. It copies a four-column table with headers, saves the same table as CSV, and shows the transfer classification in the confirmation popup. No new browser interface is required for this workflow.
+
+The classification examines all work rows before filtering Yes rows: a work marked No establishes a partial transfer regardless of what the application claimed. Deduplication uses the four exported fields, so differences in member information do not duplicate the same administrator/publisher record. The CSV is written before updating the clipboard, so a failed save does not replace the user's clipboard.
 
 ## Implementations
 
@@ -45,9 +58,9 @@ I brought the catalog-transfer workflow and filtering requirements, iterated on 
 | --- | --- | --- |
 | [Sprint 1 — Portfolio foundation](https://github.com/lenovo-jojo/portfolio/milestone/1) | Open, October 12–18, 2026 | This tool's [synthetic verification task](https://github.com/lenovo-jojo/portfolio/issues/3) is completed; the overall sprint remains open |
 | [Epic — Publish evidence-backed portfolio projects](https://github.com/lenovo-jojo/portfolio/issues/1) | Completed | Recovered source, documented behavior, and automated verification |
-| Epic — Validate partial and full transfers | Proposed; not assigned to a sprint | Confirm the business rules and required report columns; classify transfers with supporting evidence; flag insufficient or conflicting data for review; add synthetic examples |
+| Epic — Validate partial and full transfers | Implemented; Windows runtime verification pending | Confirmed work-level rules; classification before Yes filtering; four-column export; synthetic classification and deduplication checks |
 
-Partial/full transfer validation is not implemented. Its first dependency is a confirmed definition of a full transfer and a partial transfer, including which report fields establish each result. The classification must run before claimant deduplication discards individual report rows.
+Business rules and output format were confirmed with the workflow owner. Windows popup, clipboard, and Send To execution still need verification on Windows with desktop Excel.
 
 ## Limits and next work
 
