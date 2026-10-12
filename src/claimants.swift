@@ -67,7 +67,7 @@ final class SheetParser: NSObject, XMLParserDelegate {
     private var inlineBuffer = ""
     private var collectingValue = false
     private var collectingInlineText = false
-    private let wantedColumns: Set<Int> = [5, 11, 12, 13, 14, 17, 18]
+    private let wantedColumns: Set<Int> = [5, 13, 14, 17, 18]
 
     init(sharedStrings: [String]) { self.sharedStrings = sharedStrings }
 
@@ -192,16 +192,14 @@ func processWorkbook(at inputURL: URL) throws -> String {
     let sheetParser = SheetParser(sharedStrings: sharedStrings)
     try parseXML(try resolveFirstSheet(in: temporary), delegate: sheetParser)
 
-    let columns = [11, 12, 13, 14, 17, 18]
-    let fallbackHeaders = ["MEMBER MLC P#", "MEMBER NAME", "PUBLISHER MLC P#", "PUBLISHER NAME", "ADMINISTRATOR MLC P#", "ADMINISTRATOR NAME"]
-    let headerCells = sheetParser.cells[1] ?? [:]
-    let headers = zip(columns, fallbackHeaders).map { column, fallback in
-        let value = headerCells[column] ?? ""
-        return value.isEmpty ? fallback : value
-    }
+    let columns = [18, 17, 14, 13]
+    let fallbackHeaders = ["Admin", "Admin P#", "Publisher", "Publisher P#"]
+    let headers = fallbackHeaders
 
     var uniqueRows: [[String]] = []
-    var seen = Set<String>()
+    var seen = Set<[String]>()
+    var hasNo = false
+    var unknownRows: [Int] = []
     var matched = 0
     let lastRow = sheetParser.cells.keys.max() ?? 1
     if lastRow >= 2 {
@@ -210,11 +208,12 @@ func processWorkbook(at inputURL: URL) throws -> String {
             var answer = (rowCells[5] ?? "").trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
             answer = answer.replacingOccurrences(of: "(", with: "").replacingOccurrences(of: ")", with: "")
             answer = answer.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard answer == "YES" || answer == "Y" else { continue }
+            if answer.isEmpty { continue }
+            if answer == "NO" || answer == "N" { hasNo = true; continue }
+            guard answer == "YES" || answer == "Y" else { unknownRows.append(row); continue }
             matched += 1
             let claimant = columns.map { rowCells[$0] ?? "" }
-            let key = claimant.joined(separator: "\u{001F}")
-            if seen.insert(key).inserted { uniqueRows.append(claimant) }
+            if seen.insert(claimant).inserted { uniqueRows.append(claimant) }
         }
     }
 
@@ -222,19 +221,23 @@ func processWorkbook(at inputURL: URL) throws -> String {
         throw ClaimantError.message("No YES, Yes, Y, or (Y) rows were found in column E.")
     }
 
+    let classification = hasNo ? "True Partial" : (unknownRows.isEmpty ? "True Full" : "Needs review")
+    let warning = unknownRows.isEmpty ? "" : " Unrecognized transfer answers in rows: \(unknownRows.map(String.init).joined(separator: ", "))."
     let allRows = [headers] + uniqueRows
     let tabSeparated = allRows.map { $0.joined(separator: "\t") }.joined(separator: "\n")
-    if ProcessInfo.processInfo.environment["CLAIMANTS_NO_CLIPBOARD"] != "1" {
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(tabSeparated, forType: .string)
-    }
 
     let csv = allRows.map { $0.map(csvField).joined(separator: ",") }.joined(separator: "\r\n") + "\r\n"
     let baseName = inputURL.deletingPathExtension().lastPathComponent
     let outputURL = inputURL.deletingLastPathComponent().appendingPathComponent("\(baseName)_yes_claimants.csv")
     try csv.write(to: outputURL, atomically: true, encoding: .utf8)
 
-    return "Found \(matched) matching rows and \(uniqueRows.count) unique claimant row\(uniqueRows.count == 1 ? "" : "s"). The table is copied to your clipboard and saved as:\n\(outputURL.lastPathComponent)"
+    if ProcessInfo.processInfo.environment["CLAIMANTS_NO_CLIPBOARD"] != "1" {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(tabSeparated, forType: .string)
+    }
+
+
+    return "\(classification).\(warning) Found \(matched) matching rows and \(uniqueRows.count) unique claimant row\(uniqueRows.count == 1 ? "" : "s"). The table is copied to your clipboard and saved as:\n\(outputURL.lastPathComponent)"
 }
 
 do {
