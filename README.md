@@ -24,7 +24,7 @@ In personal workflow testing, I estimated that my daily processing capacity incr
 
 ## User workflow and design decisions
 
-The existing Windows Send To workflow launches the tool with one report. It copies a four-column table with headers, saves the same table as CSV, and shows the transfer classification in the confirmation popup. No new browser interface is required for this workflow.
+Double-click the Windows installer after extracting the download. It installs into the current user app folder and automatically creates Send To and desktop shortcuts. Right-click one report → Send to → MLC Claimant Drop (use Show more options first if needed). The Windows Send To workflow launches the tool with one report. It copies a four-column table with headers, saves the same table as CSV, and shows the transfer classification in the confirmation popup. No new browser interface is required for this workflow.
 
 The classification examines all work rows before filtering Yes rows: a work marked No establishes a partial transfer regardless of what the application claimed. Deduplication uses the four exported fields, so differences in member information do not duplicate the same administrator/publisher record. The CSV is written before updating the clipboard, so a failed save does not replace the user's clipboard.
 
