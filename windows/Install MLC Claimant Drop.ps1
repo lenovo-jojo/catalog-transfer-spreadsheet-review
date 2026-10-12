@@ -1,3 +1,4 @@
+$ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Windows.Forms
 
 try {
@@ -9,17 +10,28 @@ try {
     Copy-Item (Join-Path $sourceDirectory 'MLC Claimant Drop.cmd') $installDirectory -Force
 
     $desktop = [Environment]::GetFolderPath('Desktop')
-    $shortcutPath = Join-Path $desktop 'MLC Claimant Drop.lnk'
+    $sendTo = [Environment]::GetFolderPath('SendTo')
+    if ([string]::IsNullOrWhiteSpace($sendTo)) {
+        throw 'Windows could not locate your Send To folder.'
+    }
+    New-Item -ItemType Directory -Path $sendTo -Force | Out-Null
+
     $shell = New-Object -ComObject WScript.Shell
-    $shortcut = $shell.CreateShortcut($shortcutPath)
-    $shortcut.TargetPath = Join-Path $installDirectory 'MLC Claimant Drop.cmd'
-    $shortcut.WorkingDirectory = $installDirectory
-    $shortcut.Description = 'Drop an MLC Excel report here to copy unique YES claimants.'
-    $shortcut.IconLocation = "$env:SystemRoot\System32\shell32.dll,71"
-    $shortcut.Save()
+    foreach ($shortcutDirectory in @($sendTo, $desktop)) {
+        $shortcutPath = Join-Path $shortcutDirectory 'MLC Claimant Drop.lnk'
+        $shortcut = $shell.CreateShortcut($shortcutPath)
+        $shortcut.TargetPath = Join-Path $installDirectory 'MLC Claimant Drop.cmd'
+        $shortcut.WorkingDirectory = $installDirectory
+        $shortcut.Description = 'Review transfer scope and copy administrator/publisher records.'
+        $shortcut.IconLocation = "$env:SystemRoot\System32\shell32.dll,71"
+        $shortcut.Save()
+        if (-not (Test-Path -LiteralPath $shortcutPath)) {
+            throw "Windows could not create the shortcut: $shortcutPath"
+        }
+    }
 
     [void][System.Windows.Forms.MessageBox]::Show(
-        "Installed. Look for 'MLC Claimant Drop' on your desktop.`r`n`r`nDrag an .xlsx report onto that icon.",
+        "Installed!`r`n`r`nRight-click one .xlsx report, choose Send to, then MLC Claimant Drop.`r`n`r`nIf Send to is hidden, choose Show more options first.`r`n`r`nYou can also drag a report onto the desktop icon.",
         'MLC Claimant Drop',
         [System.Windows.Forms.MessageBoxButtons]::OK,
         [System.Windows.Forms.MessageBoxIcon]::Information
