@@ -1,4 +1,4 @@
-# Claimants with Yes
+# Catalog Transfer Spreadsheet Review
 
 A desktop workflow tool for extracting unique claimant records from catalog-transfer reports. Originally developed with AI assistance in August 2026; source recovered and prepared for this portfolio in October 2026.
 
@@ -38,6 +38,16 @@ Tests use invented rows and check filtering, deduplication, worksheet relationsh
 ## My role and AI assistance
 
 I brought the catalog-transfer workflow and filtering requirements, iterated on the tool with AI assistance in Codex, and worked toward a desktop drop-file workflow. AI helped generate implementation and packaging code. This portfolio documents that collaboration rather than claiming all code was handwritten.
+
+## Sprints and epics
+
+| Work | Status | Scope and evidence |
+| --- | --- | --- |
+| [Sprint 1 — Portfolio foundation](https://github.com/lenovo-jojo/portfolio/milestone/1) | Open, October 12–18, 2026 | This tool's [synthetic verification task](https://github.com/lenovo-jojo/portfolio/issues/3) is completed; the overall sprint remains open |
+| [Epic — Publish evidence-backed portfolio projects](https://github.com/lenovo-jojo/portfolio/issues/1) | Completed | Recovered source, documented behavior, and automated verification |
+| Epic — Validate partial and full transfers | Proposed; not assigned to a sprint | Confirm the business rules and required report columns; classify transfers with supporting evidence; flag insufficient or conflicting data for review; add synthetic examples |
+
+Partial/full transfer validation is not implemented. Its first dependency is a confirmed definition of a full transfer and a partial transfer, including which report fields establish each result. The classification must run before claimant deduplication discards individual report rows.
 
 ## Limits and next work
 
