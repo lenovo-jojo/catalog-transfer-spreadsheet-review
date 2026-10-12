@@ -1,0 +1,6 @@
+claimants
+__pycache__/
+*.xlsx
+*_yes_claimants.csv
+*.app/
+.DS_Store
