@@ -1,4 +1,4 @@
-# Catalog Transfer Spreadsheet Review
+# catalog transfer spreadsheet review
 
 A desktop workflow tool for extracting unique claimant records from catalog-transfer reports. Originally developed with AI assistance in August 2026; source recovered and prepared for this portfolio in October 2026.
 
