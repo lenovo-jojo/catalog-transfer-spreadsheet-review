@@ -1,4 +1,6 @@
-# catalog transfer spreadsheet review
+# spreadsheet-review
+
+current iteration: **catalog transfer review**. other teams can adapt this repository for their own spreadsheet workflows; configurable team profiles are future work.
 
 a desktop workflow tool for extracting unique claimant records from catalog-transfer reports. originally developed with ai assistance in august 2026; source recovered and prepared for this portfolio in october 2026.
 
